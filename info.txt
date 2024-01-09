@@ -1,0 +1,7 @@
+remix - main framework
+tailwindcss -css
+mongodb / postgresql - db
+prisma - orm
+vercel - for deployment
+aws s3 - image upload
+
