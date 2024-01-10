@@ -1,15 +1,14 @@
 import Layout from "~/components/layout";
 import FormField from "~/components/form-field";
-import { useState } from "react";
-import { ActionFunction, json } from "@remix-run/node";
-
+import { useState, useEffect, useRef } from "react";
+import { ActionFunction, ActionFunctionArgs, json } from "@remix-run/node";
+import { Form, useActionData } from "@remix-run/react";
+import { login, register } from "~/utils/auth.server";
 import {
   validateEmail,
   validateName,
   validatePassword,
 } from "~/utils/validators.server";
-import { login, register } from "~/utils/auth.server";
-import { useActionData } from "@remix-run/react";
 
 export const action: ActionFunction = async ({ request }) => {
   const form = await request.formData();
@@ -18,38 +17,22 @@ export const action: ActionFunction = async ({ request }) => {
   const password = form.get("password");
   let firstName = form.get("firstName");
   let lastName = form.get("lastName");
-
+  console.log("form data", form);
   // Verify that we receive these as string - for login form
   if (
     typeof action !== "string" ||
     typeof email !== "string" ||
     typeof password !== "string"
   ) {
-    return json(
-      {
-        error: "Invalid Form Data",
-        form: action,
-      },
-      {
-        status: 400,
-      }
-    );
+    console.log("error frm login action >>>", action);
+    return json({ error: `Invalid Form Data`, form: action }, { status: 400 });
   }
 
-  // additonal check for register form
   if (
     action === "register" &&
     (typeof firstName !== "string" || typeof lastName !== "string")
   ) {
-    return json(
-      {
-        error: "Invalid Form Data",
-        form: action,
-      },
-      {
-        status: 400,
-      }
-    );
+    return json({ error: `Invalid Form Data`, form: action }, { status: 400 });
   }
 
   const errors = {
@@ -63,7 +46,7 @@ export const action: ActionFunction = async ({ request }) => {
       : {}),
   };
 
-  if (Object.values(errors).some(Boolean))
+  if (Object.values(errors).some(Boolean)) {
     return json(
       {
         errors,
@@ -72,6 +55,7 @@ export const action: ActionFunction = async ({ request }) => {
       },
       { status: 400 }
     );
+  }
 
   switch (action) {
     case "login": {
@@ -80,33 +64,38 @@ export const action: ActionFunction = async ({ request }) => {
     case "register": {
       firstName = firstName as string;
       lastName = lastName as string;
-      return await register({
-        email,
-        password,
-        profile: { firstName, lastName },
-      });
+
+      return await register({ email, password }, { firstName, lastName });
     }
     default:
-      return json({ error: "Invalid Form Data ..." }, { status: 400 });
+      return json({ error: `Invalid Form Data` }, { status: 400 });
   }
 };
 
 const Login = () => {
   const actionData = useActionData();
-  const [formError, setFormError] = useState(actionData?.error || "");
-  console.log("formError >>>>", formError);
-  const [errors, setErrors] = useState(actionData?.errors || {});
-  const [action, setAction] = useState("login");
+  console.log("actionData >>>", actionData);
 
-  const [formData, setFormData] = useState(
-    actionData?.fields || {
-      email: "rn@gmail.com",
-      password: "secret",
-      firstName: "raj",
-      lastName: "nair",
-    }
-  );
-  console.log("actionData:", actionData);
+  // const [errors, setErrors] = useState(actionData?.errors || {});
+  const [errors, setErrors] = useState(actionData?.errors || "");
+  const [formError, setFormError] = useState(actionData?.error || "");
+  const [action, setAction] = useState("login");
+  const firstLoad = useRef(true);
+  console.log("formError >>>>", formError);
+
+  // const [formData, setFormData] = useState({
+  //   email: actionData?.fields?.email || "",
+  //   password: actionData?.fields?.password || "",
+  //   firstName: actionData?.fields?.firstName || "",
+  //   lastName: actionData?.fields?.emalastNameil || "",
+  // });
+
+  const [formData, setFormData] = useState({
+    email: "email" || "",
+    password: "password" || "",
+    firstName: "firstName" || "",
+    lastName: "emalastNameil" || "",
+  });
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -117,6 +106,30 @@ const Login = () => {
       [field]: event.target.value,
     }));
   };
+  useEffect(() => {
+    // clear the form if we switch forms
+    if (!firstLoad.current) {
+      const newState = {
+        email: "",
+        password: "",
+        firstName: "",
+        lastName: "",
+      };
+      setErrors(newState);
+      setFormError("");
+      setFormData(newState);
+    }
+  }, [action]);
+
+  useEffect(() => {
+    if (!firstLoad.current) {
+      setFormError("");
+    }
+  }, [formData]);
+
+  // useEffect(() => {
+  //   firstLoad.current = false;
+  // }, []);
 
   return (
     <Layout>
@@ -138,9 +151,9 @@ const Login = () => {
             : " Sign Up to Get Started!"}
         </p>
 
-        <form method="POST" className="rounded-2xl bg-gray-200 p-6 w-96">
+        <Form method="POST" className="rounded-2xl bg-gray-200 p-6 w-96">
           <div className="text-xs font-semibold text-center tracking-wide text-red-500 w-full">
-            {formError}
+            {/* <h3>formError : {JSON.stringify(formError)}</h3> */}
           </div>
           <FormField
             htmlFor="email"
@@ -185,7 +198,7 @@ const Login = () => {
               {action === "login" ? "Sign In" : "Sign Up"}
             </button>
           </div>
-        </form>
+        </Form>
       </div>
     </Layout>
   );

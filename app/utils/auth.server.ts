@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { json, createCookieSessionStorage, redirect } from "@remix-run/node";
 import { prisma } from "./prisma.server";
-import { LoginForm, RegisterForm } from "./types.server";
+import { LoginForm, Profile, RegisterForm } from "./types.server";
 import { createUser } from "./users.server";
 
 const secret = process.env.SESSION_SECRET;
@@ -19,7 +19,7 @@ const storage = createCookieSessionStorage({
     httpOnly: true,
   },
 });
-export const register = async (form: RegisterForm) => {
+export const register = async (form: RegisterForm, profile: Profile) => {
   const exists = await prisma.user.count({
     where: {
       email: form.email,
@@ -33,14 +33,19 @@ export const register = async (form: RegisterForm) => {
     );
   }
 
-  const newUser = await createUser(form);
+  const newUser = await createUser(form, profile);
   console.log("new user", newUser);
 
   if (!newUser) {
     return json(
       {
         error: "Something went wrong trying to create a new user",
-        fields: { email: form.email, password: form.password },
+        fields: {
+          email: form.email,
+          password: form.password,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+        },
       },
       {
         status: 400,

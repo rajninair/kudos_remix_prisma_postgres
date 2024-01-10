@@ -11,12 +11,13 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  profile   Profile?
+  id             String          @id @default(cuid())
+  email          String          @unique
+  password       String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  Profile        Profile?
+  UserPreference UserPreference?
 }
 
 model Profile {
@@ -25,4 +26,11 @@ model Profile {
   lastName  String?
   user      User    @relation(fields: [userId], references: [id])
   userId    String  @unique
+}
+
+model UserPreference {
+  id           String  @id @default(cuid())
+  emailUpdates Boolean
+  user         User    @relation(fields: [userId], references: [id])
+  userId       String  @unique
 }

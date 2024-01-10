@@ -1,4 +1,4 @@
-export interface ProfileData {
+export interface Profile {
   firstName?: string;
   lastName?: string;
 }
@@ -6,7 +6,7 @@ export interface ProfileData {
 export interface RegisterForm {
   email: string;
   password: string;
-  profile?: ProfileData;
+  profile?: Profile;
 }
 
 export interface LoginForm {
