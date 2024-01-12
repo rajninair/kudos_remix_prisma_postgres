@@ -2,7 +2,7 @@ import Layout from "~/components/layout";
 import FormField from "~/components/form-field";
 import { useState, useEffect, useRef } from "react";
 import { ActionFunction, ActionFunctionArgs, json } from "@remix-run/node";
-import { Form, useActionData } from "@remix-run/react";
+import { Form, useFetcher } from "@remix-run/react";
 import { login, register } from "~/utils/auth.server";
 import {
   validateEmail,
@@ -10,14 +10,14 @@ import {
   validatePassword,
 } from "~/utils/validators.server";
 
-export const action: ActionFunction = async ({ request }) => {
-  const form = await request.formData();
-  const action = form.get("_action");
-  const email = form.get("email");
-  const password = form.get("password");
-  let firstName = form.get("firstName");
-  let lastName = form.get("lastName");
-  console.log("form data", form);
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const action = formData.get("_action");
+  const email = formData.get("email");
+  const password = formData.get("password");
+  let firstName = formData.get("firstName");
+  let lastName = formData.get("lastName");
+  console.log("formData", formData);
   // Verify that we receive these as string - for login form
   if (
     typeof action !== "string" ||
@@ -40,8 +40,8 @@ export const action: ActionFunction = async ({ request }) => {
     password: validatePassword(password),
     ...(action === "register"
       ? {
-          firstName: validateName((firstName as string) || ""),
-          lastName: validateName((lastName as string) || ""),
+          firstName: validateName((firstName as string)?.trim() || ""),
+          lastName: validateName((lastName as string)?.trim() || ""),
         }
       : {}),
   };
@@ -70,32 +70,26 @@ export const action: ActionFunction = async ({ request }) => {
     default:
       return json({ error: `Invalid Form Data` }, { status: 400 });
   }
-};
+}
 
 const Login = () => {
-  const actionData = useActionData();
-  console.log("actionData >>>", actionData);
-
-  // const [errors, setErrors] = useState(actionData?.errors || {});
-  const [errors, setErrors] = useState(actionData?.errors || "");
-  const [formError, setFormError] = useState(actionData?.error || "");
-  const [action, setAction] = useState("login");
-  const firstLoad = useRef(true);
-  console.log("formError >>>>", formError);
-
-  // const [formData, setFormData] = useState({
-  //   email: actionData?.fields?.email || "",
-  //   password: actionData?.fields?.password || "",
-  //   firstName: actionData?.fields?.firstName || "",
-  //   lastName: actionData?.fields?.emalastNameil || "",
-  // });
-
+  let fetcher = useFetcher();
+  let fetcherData = fetcher.data;
+  // console.log("fetcher.data.errors 78 >> ", fetcher?.data?.errors);
+  // console.log("fetcher.data.error 79 >> ", fetcher?.data?.error);
+  // console.log("fetcherData.fields 80 >> ", fetcherData?.fields);
+  // const [errors, setErrors] = useState(fetcherData?.errors || {});
+  // const [formError, setFormError] = useState(fetcherData?.error || "");
   const [formData, setFormData] = useState({
-    email: "email" || "",
-    password: "password" || "",
-    firstName: "firstName" || "",
-    lastName: "emalastNameil" || "",
+    email: fetcherData?.fields?.email || "",
+    password: fetcherData?.fields?.password || "",
+    firstName: fetcherData?.fields?.firstName || "",
+    lastName: fetcherData?.fields?.lastName || "",
   });
+
+  const [action, setAction] = useState("login");
+  // const firstLoad = useRef(true);
+  // console.log("formError >>>>", formError);
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -106,26 +100,26 @@ const Login = () => {
       [field]: event.target.value,
     }));
   };
-  useEffect(() => {
-    // clear the form if we switch forms
-    if (!firstLoad.current) {
-      const newState = {
-        email: "",
-        password: "",
-        firstName: "",
-        lastName: "",
-      };
-      setErrors(newState);
-      setFormError("");
-      setFormData(newState);
-    }
-  }, [action]);
 
-  useEffect(() => {
-    if (!firstLoad.current) {
-      setFormError("");
-    }
-  }, [formData]);
+  // useEffect(() => {
+  //   if (!firstLoad.current) {
+  //     const newState = {
+  //       email: "",
+  //       password: "",
+  //       firstName: "",
+  //       lastName: "",
+  //     };
+  //     setErrors(newState);
+  //     setFormError("");
+  //     setFormData(newState);
+  //   }
+  // }, [action]);
+
+  // useEffect(() => {
+  //   if (!firstLoad.current) {
+  //     setFormError("");
+  //   }
+  // }, [formData]);
 
   // useEffect(() => {
   //   firstLoad.current = false;
@@ -142,7 +136,7 @@ const Login = () => {
         </button>
 
         <h2 className="text-5xl font-extrabold text-yellow-300">
-          Welcome to kudos
+          my remix app
         </h2>
 
         <p className="font-semibold text-slate-300">
@@ -151,23 +145,26 @@ const Login = () => {
             : " Sign Up to Get Started!"}
         </p>
 
-        <Form method="POST" className="rounded-2xl bg-gray-200 p-6 w-96">
+        <fetcher.Form
+          method="POST"
+          className="rounded-2xl bg-gray-200 p-6 w-96"
+        >
           <div className="text-xs font-semibold text-center tracking-wide text-red-500 w-full">
-            {/* <h3>formError : {JSON.stringify(formError)}</h3> */}
+            <h4>{fetcher?.data?.error}</h4>
           </div>
           <FormField
             htmlFor="email"
             label="Email"
             value={formData.email}
             onChange={(e) => handleInputChange(e, "email")}
-            error={errors?.email}
+            error={fetcher?.data?.errors?.email}
           />
           <FormField
             htmlFor="password"
             label="Password"
             value={formData.password}
             onChange={(e) => handleInputChange(e, "password")}
-            error={errors?.password}
+            error={fetcher?.data?.errors?.password}
           />
           {action !== "login" ? (
             <>
@@ -176,14 +173,14 @@ const Login = () => {
                 label="FirstName"
                 value={formData.firstName}
                 onChange={(e) => handleInputChange(e, "firstName")}
-                error={errors?.firstName}
+                error={fetcher?.data?.errors?.firstName}
               />
               <FormField
                 htmlFor="lastName"
                 label="LastName"
                 value={formData.lastName}
                 onChange={(e) => handleInputChange(e, "lastName")}
-                error={errors?.lastName}
+                error={fetcher?.data?.errors?.lastName}
               />
             </>
           ) : null}
@@ -198,7 +195,7 @@ const Login = () => {
               {action === "login" ? "Sign In" : "Sign Up"}
             </button>
           </div>
-        </Form>
+        </fetcher.Form>
       </div>
     </Layout>
   );
