@@ -75,11 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
 const Login = () => {
   let fetcher = useFetcher();
   let fetcherData = fetcher.data;
-  // console.log("fetcher.data.errors 78 >> ", fetcher?.data?.errors);
-  // console.log("fetcher.data.error 79 >> ", fetcher?.data?.error);
-  // console.log("fetcherData.fields 80 >> ", fetcherData?.fields);
-  // const [errors, setErrors] = useState(fetcherData?.errors || {});
-  // const [formError, setFormError] = useState(fetcherData?.error || "");
+
   const [formData, setFormData] = useState({
     email: fetcherData?.fields?.email || "",
     password: fetcherData?.fields?.password || "",
@@ -88,8 +84,6 @@ const Login = () => {
   });
 
   const [action, setAction] = useState("login");
-  // const firstLoad = useRef(true);
-  // console.log("formError >>>>", formError);
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -100,30 +94,6 @@ const Login = () => {
       [field]: event.target.value,
     }));
   };
-
-  // useEffect(() => {
-  //   if (!firstLoad.current) {
-  //     const newState = {
-  //       email: "",
-  //       password: "",
-  //       firstName: "",
-  //       lastName: "",
-  //     };
-  //     setErrors(newState);
-  //     setFormError("");
-  //     setFormData(newState);
-  //   }
-  // }, [action]);
-
-  // useEffect(() => {
-  //   if (!firstLoad.current) {
-  //     setFormError("");
-  //   }
-  // }, [formData]);
-
-  // useEffect(() => {
-  //   firstLoad.current = false;
-  // }, []);
 
   return (
     <Layout>
