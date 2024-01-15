@@ -10,7 +10,7 @@ if (!secret) {
 }
 const storage = createCookieSessionStorage({
   cookie: {
-    name: "kudos-session",
+    name: "myremix-session",
     secure: process.env.NODE_ENV === "production",
     secrets: [secret],
     sameSite: "lax",
@@ -74,7 +74,7 @@ export const login = async (form: LoginForm) => {
       }
     );
   }
-  return createUserSession(user.id, "/");
+  return createUserSession(user.id, "/user-profile");
 };
 
 export const createUserSession = async (userId: string, redirectTo: string) => {
@@ -93,7 +93,7 @@ export async function requireUserId(
 ) {
   const session = await getUserSession(request);
   const userId = session.get("userId");
-  if (!userId) {
+  if (!userId || typeof userId !== "string") {
     const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
     throw redirect(`/login?${searchParams}`);
   }
@@ -105,5 +105,37 @@ function getUserSession(request: Request) {
 }
 
 // getUserId
+async function getUserId(request: Request) {
+  const session = await getUserSession(request);
+  const userId = session.get("userId");
+  if (!userId || typeof userId !== "string") return null;
+  return userId;
+}
 
 // getUser
+export async function getUser(request: Request) {
+  const userId = await getUserId(request);
+  if (typeof userId !== "string") {
+    return null;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, Profile: true },
+    });
+    return user;
+  } catch {
+    throw logout(request);
+  }
+}
+
+// logout
+export async function logout(request: Request) {
+  const session = await getUserSession(request);
+  return redirect("/login", {
+    headers: {
+      "Set-Cookie": await storage.destroySession(session),
+    },
+  });
+}
